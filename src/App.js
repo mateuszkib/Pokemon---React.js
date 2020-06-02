@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import "./App.css";
 import {
     Table,
@@ -14,16 +14,17 @@ function App() {
         return [...Array(26)].map((_, y) => String.fromCharCode(y + 65));
     }
 
+    const [people, setPeople] = useState(null);
     let alphabet = generateAlphabet();
 
     useEffect(() => {
-        let people;
+        let data;
         axios
             .get(
                 "https://cors-anywhere.herokuapp.com/https://swapi.dev/api/people"
             )
             .then((res) => {
-                people = res.data.results;
+                data = res.data.results;
                 let count = res.data.count;
                 let promises = [];
                 let pages = Math.ceil(count / 10);
@@ -40,8 +41,11 @@ function App() {
             })
             .then((response) => {
                 let results = response.map((el) => el.data.results);
-                people = people.concat(...results);
-                console.log(people);
+                data = data.concat(...results);
+                data.sort((a, b) =>
+                    a.name < b.name ? -1 : a.name > b.name ? 1 : 0
+                );
+                setPeople(data);
             })
             .catch((err) => {
                 console.log(err);
@@ -62,11 +66,42 @@ function App() {
                     </TableRow>
                 </TableHead>
                 <TableBody>
-                    {alphabet.map((el, index) => (
-                        <TableRow key={index}>
-                            <TableCell colSpan="6">{el}</TableCell>
-                        </TableRow>
-                    ))}
+                    <React.Fragment>
+                        {alphabet.map((el, index) => (
+                            <>
+                                <TableRow key={index}>
+                                    <TableCell key={index} colSpan="6">
+                                        {el}
+                                    </TableCell>
+                                </TableRow>
+                                {people &&
+                                    people.map((item, index) =>
+                                        item.name.charAt(0) === el ? (
+                                            <TableRow key={index}>
+                                                <TableCell>
+                                                    {item.name}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {item.eye_color}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {item.gender}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {item.hair_color}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {item.height}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {item.mass}
+                                                </TableCell>
+                                            </TableRow>
+                                        ) : null
+                                    )}
+                            </>
+                        ))}
+                    </React.Fragment>
                 </TableBody>
             </Table>
         </div>
